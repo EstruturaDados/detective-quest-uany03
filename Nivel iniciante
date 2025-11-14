@@ -1,0 +1,157 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/**
+ * @brief Estrutura que representa um cômodo (Sala) na mansão.
+ *
+ * Cada Sala armazena seu nome e ponteiros para os cômodos
+ * à esquerda e à direita (filhos da árvore binária).
+ */
+typedef struct Sala {
+    char nome[50];
+    struct Sala *esquerda;
+    struct Sala *direita;
+} Sala;
+
+/**
+ * @brief Cria, de forma dinâmica, uma nova sala com o nome especificado.
+ *
+ * @param nome O nome do cômodo a ser criado.
+ * @return Um ponteiro para a Sala recém-criada.
+ */
+Sala* criarSala(const char *nome) {
+    // Alocação dinâmica de memória para a nova sala
+    Sala *novaSala = (Sala *)malloc(sizeof(Sala));
+
+    // Verifica se a alocação foi bem-sucedida
+    if (novaSala == NULL) {
+        perror("Erro de alocação de memória.");
+        exit(EXIT_FAILURE);
+    }
+
+    // Copia o nome para a estrutura
+    strncpy(novaSala->nome, nome, sizeof(novaSala->nome) - 1);
+    novaSala->nome[sizeof(novaSala->nome) - 1] = '\0'; // Garantir terminação da string
+
+    // Inicializa os ponteiros dos filhos como NULL
+    novaSala->esquerda = NULL;
+    novaSala->direita = NULL;
+
+    return novaSala;
+}
+
+/**
+ * @brief Permite a navegação interativa do jogador pela árvore (mansão).
+ *
+ * Inicia a exploração a partir do Hall de entrada e continua até
+ * o jogador alcançar um nó-folha (cômodo sem saída).
+ *
+ * @param atual O ponteiro para a sala atual onde o jogador está.
+ */
+void explorarSalas(Sala *atual) {
+    // Variável para armazenar a escolha do jogador
+    char escolha;
+
+    printf("\n--- Início da Exploração da Mansão 🗝️ ---\n");
+
+    // Loop de exploração que continua até que o cômodo atual seja um nó-folha
+    while (atual != NULL) {
+        printf("\nVocê está em: **%s**\n", atual->nome);
+
+        // Verifica se é um cômodo terminal (nó-folha)
+        if (atual->esquerda == NULL && atual->direita == NULL) {
+            printf("\n🎉 Parabéns! Você encontrou um cômodo sem saída (fim da exploração)!\n");
+            break; // Fim da exploração
+        }
+
+        printf("Para onde você deseja ir? ");
+
+        // Opções de navegação:
+        if (atual->esquerda != NULL) {
+            printf("[(e) Esquerda -> %s] ", atual->esquerda->nome);
+        }
+        if (atual->direita != NULL) {
+            printf("[(d) Direita -> %s] ", atual->direita->nome);
+        }
+
+        printf("ou [(s) Sair]: ");
+
+        // Leitura da escolha do jogador
+        if (scanf(" %c", &escolha) != 1) {
+            // Tratar erro de leitura, se necessário
+            break;
+        }
+
+        // Conversão para minúscula para flexibilidade
+        escolha = tolower(escolha);
+
+        // Processa a escolha do jogador
+        if (escolha == 's') {
+            printf("\n--- Exploração encerrada pelo jogador. ---\n");
+            break;
+        } else if (escolha == 'e' && atual->esquerda != NULL) {
+            atual = atual->esquerda; // Move para a esquerda
+            printf("➡️ Indo para a esquerda...\n");
+        } else if (escolha == 'd' && atual->direita != NULL) {
+            atual = atual->direita; // Move para a direita
+            printf("➡️ Indo para a direita...\n");
+        } else {
+            // Opção inválida ou caminho indisponível
+            printf("\n🚫 Opção inválida ou caminho não disponível. Por favor, escolha 'e', 'd' ou 's'.\n");
+            // Não avança, o loop continua na sala atual
+        }
+    }
+}
+
+/**
+ * @brief Função principal: monta o mapa inicial da mansão e dá início à exploração.
+ *
+ * Cria a árvore binária de forma manual e inicia a navegação a partir da raiz (Hall de entrada).
+ */
+int main() {
+    // 1. Montagem do mapa da mansão (Árvore Binária)
+
+    // Nível 0 (Raiz)
+    Sala *hallDeEntrada = criarSala("Hall de Entrada");
+
+    // Nível 1
+    hallDeEntrada->esquerda = criarSala("Sala de Estar");
+    hallDeEntrada->direita = criarSala("Biblioteca");
+
+    // Nível 2
+    hallDeEntrada->esquerda->esquerda = criarSala("Cozinha");
+    hallDeEntrada->esquerda->direita = criarSala("Sala de Jantar");
+    hallDeEntrada->direita->direita = criarSala("Escritório"); // A Biblioteca não tem caminho à esquerda
+
+    // Nível 3
+    hallDeEntrada->esquerda->esquerda->direita = criarSala("Despensa"); // A Cozinha não tem caminho à esquerda
+    hallDeEntrada->esquerda->direita->esquerda = criarSala("Jardim");
+    hallDeEntrada->direita->direita->esquerda = criarSala("Quarto Principal");
+    hallDeEntrada->direita->direita->direita = criarSala("Varanda");
+
+    // Os nós: Despensa, Jardim, Quarto Principal, e Varanda são folhas e terminam a exploração.
+
+    // 2. Início da Exploração
+    explorarSalas(hallDeEntrada);
+
+    // 3. Limpeza de Memória (liberação dos nós alocados dinamicamente)
+    // Para simplificação, faremos a limpeza apenas na main. Em um código mais complexo,
+    // seria ideal uma função recursiva de liberação (ex: liberarSala(Sala*)).
+    // A liberação manual é feita aqui para o exemplo simples:
+    free(hallDeEntrada->esquerda->esquerda->direita); // Despensa
+    free(hallDeEntrada->esquerda->direita->esquerda); // Jardim
+    free(hallDeEntrada->direita->direita->esquerda); // Quarto Principal
+    free(hallDeEntrada->direita->direita->direita); // Varanda
+
+    free(hallDeEntrada->esquerda->esquerda); // Cozinha
+    free(hallDeEntrada->esquerda->direita); // Sala de Jantar
+    free(hallDeEntrada->direita->direita); // Escritório
+
+    free(hallDeEntrada->esquerda); // Sala de Estar
+    free(hallDeEntrada->direita); // Biblioteca
+
+    free(hallDeEntrada); // Hall de Entrada
+
+    return 0;
+}
